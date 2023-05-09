@@ -36,10 +36,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--vision_encoder_path", default="ViT-L-14", type=str)
     parser.add_argument("--vision_encoder_pretrained", default="openai", type=str)
-    parser.add_argument("--lm_path", default="checkpoints/llama-7b_hf", type=str)
+    parser.add_argument("--lm_path", default="checkpoints/llama-7b-hf", type=str)
     parser.add_argument(
         "--tokenizer_path",
-        default="checkpoints/llama-7b_hf",
+        default="checkpoints/llama-7b-hf",
         type=str,
         help="path to tokenizer",
     )
