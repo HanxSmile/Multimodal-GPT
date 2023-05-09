@@ -96,12 +96,12 @@ class Inferencer:
 class PromptGenerator:
 
     def __init__(
-        self,
-        prompt_template=TEMPLATE,
-        ai_prefix="Response",
-        user_prefix="Instruction",
-        sep: str = "\n\n### ",
-        buffer_size=0,
+            self,
+            prompt_template=TEMPLATE,
+            ai_prefix="Response",
+            user_prefix="Instruction",
+            sep: str = "\n\n### ",
+            buffer_size=0,
     ):
         self.all_history = list()
         self.ai_prefix = ai_prefix
@@ -145,7 +145,7 @@ class PromptGenerator:
         for role, message in all_history[::-1]:
             if message:
                 if type(message) is tuple and message[
-                        1] is not None and not have_image:
+                    1] is not None and not have_image:
                     message, _ = message
                     context.append(self.sep + "Image:\n<image>" + self.sep +
                                    role + ":\n" + message)
@@ -196,20 +196,20 @@ def to_gradio_chatbot(prompt_generator):
 
 
 def bot(
-    text,
-    image,
-    state,
-    prompt,
-    ai_prefix,
-    user_prefix,
-    seperator,
-    history_buffer,
-    max_new_token,
-    num_beams,
-    temperature,
-    top_k,
-    top_p,
-    do_sample,
+        text,
+        image,
+        state,
+        prompt,
+        ai_prefix,
+        user_prefix,
+        seperator,
+        history_buffer,
+        max_new_token,
+        num_beams,
+        temperature,
+        top_k,
+        top_p,
+        do_sample,
 ):
     state.prompt_template = prompt
     state.ai_prefix = ai_prefix
@@ -228,7 +228,7 @@ def bot(
                                    num_beams, temperature, top_k, top_p,
                                    do_sample)
     state.all_history[-1][-1] = inference_results
-    memory_allocated = str(round(torch.cuda.memory_allocated() / 1024**3,
+    memory_allocated = str(round(torch.cuda.memory_allocated() / 1024 ** 3,
                                  2)) + 'GB'
     return state, to_gradio_chatbot(state), "", None, inputs, memory_allocated
 
@@ -356,15 +356,21 @@ def build_conversation_demo():
 
 
 if __name__ == "__main__":
-    llama_path = "checkpoints/llama-7b_hf"
-    open_flamingo_path = "checkpoints/OpenFlamingo-9B/checkpoint.pt"
-    finetune_path = "checkpoints/mmgpt-lora-v0-release.pt"
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model_dir", default="checkpoints", type=str)
+    args = parser.parse_args()
+
+    llama_path = os.path.join(args.model_dir, "llama-7b_hf")
+    open_flamingo_path = os.path.join(args.model_dir, "OpenFlamingo-9B/checkpoint.pt")
+    finetune_path = os.path.join(args.model_dir, "mmgpt-lora-v0-release.pt")
 
     inferencer = Inferencer(
         llama_path=llama_path,
         open_flamingo_path=open_flamingo_path,
         finetune_path=finetune_path)
-    init_memory = str(round(torch.cuda.memory_allocated() / 1024**3, 2)) + 'GB'
+    init_memory = str(round(torch.cuda.memory_allocated() / 1024 ** 3, 2)) + 'GB'
     demo = build_conversation_demo()
     demo.queue(concurrency_count=3)
     IP = "0.0.0.0"
