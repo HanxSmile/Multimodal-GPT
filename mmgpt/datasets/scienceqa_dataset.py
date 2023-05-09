@@ -21,7 +21,7 @@ class SqaConfig:
 
 TEMPLATE = {
     "description": "Template used by ScienceQA.",
-    "question_prefix": "Below is an science question. Write an answer to completes the request.\n\n### Image:\n{image}",
+    "question_prefix": "Below is a science question. Write an answer to completes the request.\n\n### Image:\n{image}",
     'question_template': {
         "C": "\n\n### Context:\n{}",
         "Q": "\n\n### Question:\n{}",
