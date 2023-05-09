@@ -362,7 +362,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_dir", default="checkpoints", type=str)
     args = parser.parse_args()
 
-    llama_path = os.path.join(args.model_dir, "llama-7b_hf")
+    llama_path = os.path.join(args.model_dir, "llama-7b-hf")
     open_flamingo_path = os.path.join(args.model_dir, "OpenFlamingo-9B/checkpoint.pt")
     finetune_path = os.path.join(args.model_dir, "mmgpt-lora-v0-release.pt")
 
