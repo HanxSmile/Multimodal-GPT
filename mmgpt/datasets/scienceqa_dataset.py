@@ -21,7 +21,8 @@ class SqaConfig:
 
 TEMPLATE = {
     "description": "Template used by ScienceQA.",
-    "question_prefix": "Below is a science question. Write an answer to completes the request.\n\n### Image:\n{image}",
+    "visual_question_prefix": "Below is a science question. Write an answer to completes the request.\n\n### Image:\n{image}",
+    "language_question_prefix": "Below is a science question. Write an answer to completes the request.",
     'question_template': {
         "C": "\n\n### Context:\n{}",
         "Q": "\n\n### Question:\n{}",
@@ -40,6 +41,10 @@ TEMPLATE = {
 
 
 class ScienceQAPrompter:
+    def __init__(self, dataset_type):
+        assert dataset_type in ("visual", "language"), "dataset_type can only be 'visual' or 'language'."
+        self.dataset_type = dataset_type
+
     def __call__(self, format, question, context, choice, answer, lecture, solution):
         all_info = {
             "Q": question,
@@ -50,7 +55,10 @@ class ScienceQAPrompter:
             "E": solution
         }
         input_format, output_format = format.split("-")
-        input_str = TEMPLATE["question_prefix"].format(image="<image>")
+        if self.dataset_type == "visual":
+            input_str = TEMPLATE["visual_question_prefix"].format(image="<image>")
+        else:
+            input_str = TEMPLATE["language_question_prefix"]
         for item in input_format:
             input_str += TEMPLATE["question_template"][item].format(all_info[item])
         response_prefix = TEMPLATE["response_prefix"]
@@ -198,19 +206,22 @@ class ParseProblem:
 
 class ScienceQADataset(VQADataset):
     def __init__(self,
+                 dataset_type: str,
                  tokenizer,
-                 vis_processor,
+                 vis_processor=None,
                  sqa_cfg=SqaConfig(),
                  add_eos=True,
                  ignore_instruction=True,
                  ):
         assert tokenizer.add_eos_token is False, "tokenizer should not add eos token by default"
+        assert dataset_type in ("visual", "language"), "dataset_type can only be 'visual' or 'language'."
+        self.dataset_type = dataset_type
         self.tokenizer: LlamaTokenizer = tokenizer
         self.vis_processor = vis_processor
         self.sqa_cfg = sqa_cfg
         self.all_problems, self.qids = self._load_data()
         self._filter_data()
-        self.prompter = ScienceQAPrompter()
+        self.prompter = ScienceQAPrompter(dataset_type)
         self.ignore_instruction = ignore_instruction
         self.add_eos = add_eos
 
@@ -227,14 +238,22 @@ class ScienceQADataset(VQADataset):
         return problems, qids
 
     def _filter_data(self):
-        valid_qids = []
+        visual_qids = []
+        language_qids = []
+
         for qid in self.qids:
             problem = self.all_problems[qid]
             image_name = problem["image"]
             image_path = osp.join(self.sqa_cfg.images_dir, problem["split"], qid, str(image_name))
             if osp.exists(image_path) and image_name:
-                valid_qids.append(qid)
-        self.qids = valid_qids
+                visual_qids.append(qid)
+            else:
+                language_qids.append(qid)
+
+        if self.dataset_type == "visual":
+            self.qids = visual_qids
+        else:
+            self.qids = language_qids
         print(f"There are {len(self.qids)} valid VL samples.")
 
     def process_image(self, problem_info):
@@ -261,12 +280,26 @@ class ScienceQADataset(VQADataset):
     def __len__(self):
         return len(self.qids)
 
-    def __getitem__(self, index):
-        this_qid = self.qids[index]
-        problem = self.all_problems[this_qid]
-        image = self.process_image((this_qid, problem))
+    def _get_visual_sample(self, problem_info):
+        qid, problem = problem_info
+        image = self.process_image((qid, problem))
         text = self.process_text(problem)
         res = self.tokenize(text)
         res.update(image=image)
         res.update(text)
         return res
+
+    def _get_language_sample(self, problem_info):
+        qid, problem = problem_info
+        text = self.process_text(problem)
+        res = self.tokenize(text)
+        res.update(text)
+        return res
+
+    def __getitem__(self, index):
+        this_qid = self.qids[index]
+        problem = self.all_problems[this_qid]
+        if self.dataset_type == "visual":
+            return self._get_visual_sample((this_qid, problem))
+        else:
+            return self._get_language_sample((this_qid, problem))

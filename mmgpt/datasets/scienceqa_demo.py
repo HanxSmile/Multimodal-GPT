@@ -17,6 +17,10 @@ if __name__ == '__main__':
     text_tokenizer.bos_token_id = 1
     text_tokenizer.eos_token_id = 2
 
-    dataset = ScienceQADataset(text_tokenizer, image_processor)
+    dataset = ScienceQADataset("visual", text_tokenizer, image_processor)
+    print(len(dataset))
+    print(dataset[0])
+
+    dataset = ScienceQADataset("language", text_tokenizer)
     print(len(dataset))
     print(dataset[0])
