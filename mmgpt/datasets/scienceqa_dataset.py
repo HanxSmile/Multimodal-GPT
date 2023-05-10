@@ -1,4 +1,6 @@
 import json
+import torch
+import numpy as np
 import os.path as osp
 from .vqa_dataset import VQADataset
 from dataclasses import dataclass
@@ -303,3 +305,97 @@ class ScienceQADataset(VQADataset):
             return self._get_visual_sample((this_qid, problem))
         else:
             return self._get_language_sample((this_qid, problem))
+
+    def visual_collater(self, samples):
+        image_list, question_list, answer_list, input_id_list, attention_mask_list, labels_list = [], [], [], [], [], []
+
+        for sample in samples:
+            image_list.append(sample["image"])
+            question_list.append(sample["instruction"])
+            answer_list.append(sample["answer"])
+            input_id_list.append(sample["input_ids"])
+            attention_mask_list.append(sample["attention_mask"])
+            labels_list.append(sample["labels"])
+
+        # We have to pad the labels before calling `tokenizer.pad` as this method won't pad them and needs them of the
+        # same length to return tensors.
+        max_label_length = max(len(l) for l in labels_list)
+        padding_side = self.tokenizer.padding_side
+        padded_labels = []
+        for l in labels_list:
+            remainder = [-100] * (max_label_length - len(l))
+            if isinstance(l, list):
+                l = l + remainder if padding_side == "right" else remainder + l
+            elif padding_side == "right":
+                l = np.concatenate([l, remainder]).astype(np.int64)
+            else:
+                l = np.concatenate([remainder, l]).astype(np.int64)
+            padded_labels.append(l)
+
+        padded_samples = self.tokenizer.pad(
+            {"input_ids": input_id_list, "attention_mask": attention_mask_list, "labels": padded_labels},
+            return_tensors="pt",
+            padding="longest",
+        )
+
+        labels = padded_samples["labels"]
+        media_token_id = self.tokenizer("<image>", add_special_tokens=False)["input_ids"][-1]
+        labels[labels == self.tokenizer.pad_token_id] = -100
+        labels[:, 0] = -100
+        labels[labels == media_token_id] = -100
+        return {
+            "image": torch.stack(image_list, dim=0),
+            "input_ids": padded_samples["input_ids"],
+            "attention_mask": padded_samples["attention_mask"],
+            "labels": labels,
+            "instruction": question_list,
+            "answer": answer_list,
+        }
+
+    def language_collater(self, samples):
+        question_list, answer_list, input_id_list, attention_mask_list, labels_list = [], [], [], [], []
+
+        for sample in samples:
+            question_list.append(sample["instruction"])
+            answer_list.append(sample["answer"])
+            input_id_list.append(sample["input_ids"])
+            attention_mask_list.append(sample["attention_mask"])
+            labels_list.append(sample["labels"])
+
+        # We have to pad the labels before calling `tokenizer.pad` as this method won't pad them and needs them of the
+        # same length to return tensors.
+        max_label_length = max(len(l) for l in labels_list)
+        padding_side = self.tokenizer.padding_side
+        padded_labels = []
+        for l in labels_list:
+            remainder = [-100] * (max_label_length - len(l))
+            if isinstance(l, list):
+                l = l + remainder if padding_side == "right" else remainder + l
+            elif padding_side == "right":
+                l = np.concatenate([l, remainder]).astype(np.int64)
+            else:
+                l = np.concatenate([remainder, l]).astype(np.int64)
+            padded_labels.append(l)
+
+        padded_samples = self.tokenizer.pad(
+            {"input_ids": input_id_list, "attention_mask": attention_mask_list, "labels": padded_labels},
+            return_tensors="pt",
+            padding="longest",
+        )
+
+        labels = padded_samples["labels"]
+        labels[labels == self.tokenizer.pad_token_id] = -100
+        labels[:, 0] = -100
+        return {
+            "input_ids": padded_samples["input_ids"],
+            "attention_mask": padded_samples["attention_mask"],
+            "labels": labels,
+            "instruction": question_list,
+            "answer": answer_list,
+        }
+
+    def collater(self, samples):
+        if self.dataset_type == "visual":
+            return self.visual_collater(samples)
+        else:
+            return self.language_collater(samples)

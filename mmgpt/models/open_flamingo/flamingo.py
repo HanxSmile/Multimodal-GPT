@@ -8,14 +8,14 @@ from .helpers import PerceiverResampler
 
 class Flamingo(nn.Module):
     def __init__(
-        self,
-        vision_encoder: nn.Module,
-        lang_encoder: nn.Module,
-        eoc_token_id: int,
-        media_token_id: int,
-        vis_dim: int,
-        cross_attn_every_n_layers: int = 1,
-        use_media_placement_augmentation: bool = False,
+            self,
+            vision_encoder: nn.Module,
+            lang_encoder: nn.Module,
+            eoc_token_id: int,
+            media_token_id: int,
+            vis_dim: int,
+            cross_attn_every_n_layers: int = 1,
+            use_media_placement_augmentation: bool = False,
     ):
         """
         Args:
@@ -44,15 +44,15 @@ class Flamingo(nn.Module):
         )
 
     def forward(
-        self,
-        vision_x: torch.Tensor,
-        lang_x: torch.Tensor,
-        attention_mask: torch.Tensor = None,
-        labels: torch.Tensor = None,
-        use_cached_vision_x: bool = False,
-        clear_conditioned_layers: bool = True,
-        past_key_values=None,
-        use_cache: bool = False,
+            self,
+            vision_x: torch.Tensor,
+            lang_x: torch.Tensor,
+            attention_mask: torch.Tensor = None,
+            labels: torch.Tensor = None,
+            use_cached_vision_x: bool = False,
+            clear_conditioned_layers: bool = True,
+            past_key_values=None,
+            use_cache: bool = False,
     ):
         """
         Forward pass of Flamingo.
@@ -88,8 +88,8 @@ class Flamingo(nn.Module):
                 layer.condition_only_lang_x(False)
             return output
         assert (
-            vision_x is not None
-        ) or use_cached_vision_x, "Must provide either vision_x or use_cached_vision_x to True."
+                       vision_x is not None
+               ) or use_cached_vision_x, "Must provide either vision_x or use_cached_vision_x to True."
 
         if use_cached_vision_x:
             # Case: use cached; vision_x should be cached and other
@@ -115,21 +115,21 @@ class Flamingo(nn.Module):
         return output
 
     def generate(
-        self,
-        vision_x: torch.Tensor,
-        lang_x: torch.Tensor,
-        attention_mask: torch.Tensor = None,
-        num_beams=1,
-        max_new_tokens=None,
-        temperature=1.0,
-        top_k=0,
-        top_p=1.0,
-        no_repeat_ngram_size=0,
-        prefix_allowed_tokens_fn=None,
-        length_penalty=1.0,
-        num_return_sequences=1,
-        do_sample=False,
-        early_stopping=False,
+            self,
+            vision_x: torch.Tensor,
+            lang_x: torch.Tensor,
+            attention_mask: torch.Tensor = None,
+            num_beams=1,
+            max_new_tokens=None,
+            temperature=1.0,
+            top_k=0,
+            top_p=1.0,
+            no_repeat_ngram_size=0,
+            prefix_allowed_tokens_fn=None,
+            length_penalty=1.0,
+            num_return_sequences=1,
+            do_sample=False,
+            early_stopping=False,
     ):
         """
         Generate text conditioned on vision and language inputs.

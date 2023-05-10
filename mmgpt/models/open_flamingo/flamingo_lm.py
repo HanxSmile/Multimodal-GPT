@@ -34,10 +34,10 @@ class FlamingoLayer(nn.Module):
         self.attend_previous = attend_previous
 
     def forward(
-        self,
-        lang_x,
-        attention_mask=None,
-        **decoder_layer_kwargs,
+            self,
+            lang_x,
+            attention_mask=None,
+            **decoder_layer_kwargs,
     ):
         if self.gated_cross_attn_layer is None or self.only_lang_x:
             return self.decoder_layer(lang_x, attention_mask=attention_mask, **decoder_layer_kwargs)
@@ -73,11 +73,11 @@ class FlamingoLMMixin(nn.Module):
         setattr_recursive(self, self.decoder_layers_attr_name, value)
 
     def init_flamingo(
-        self,
-        media_token_id,
-        vis_hidden_size,
-        cross_attn_every_n_layers,
-        use_media_placement_augmentation,
+            self,
+            media_token_id,
+            vis_hidden_size,
+            cross_attn_every_n_layers,
+            use_media_placement_augmentation,
     ):
         """
         Initialize Flamingo by adding a new gated cross attn to the decoder. Store the media token id for computing the media locations.
@@ -96,8 +96,8 @@ class FlamingoLMMixin(nn.Module):
                 [
                     FlamingoLayer(gated_cross_attn_layer, decoder_layer)
                     for gated_cross_attn_layer, decoder_layer in zip(
-                        self.gated_cross_attn_layers, self._get_decoder_layers()
-                    )
+                    self.gated_cross_attn_layers, self._get_decoder_layers()
+                )
                 ]
             )
         )
