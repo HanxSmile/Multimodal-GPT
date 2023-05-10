@@ -3,6 +3,7 @@
 import argparse
 import copy
 import glob
+import json
 import os
 import random
 import time
@@ -206,6 +207,8 @@ def main():
     print(f"Start running training on rank {args.rank}.")
 
     if args.rank == 0 and args.report_to_wandb:
+        wandb_secret_key = json.load(open("~/.wandb.json"))
+        wandb.login(key=wandb_secret_key["key"])
         wandb.init(
             project=args.wandb_project,
             entity=args.wandb_entity,
