@@ -69,7 +69,7 @@ if __name__ == '__main__':
             num_beams=EvalConfig.num_beams,
             length_penalty=EvalConfig.length_penalty
         )
-
+        print(pred_answer)
         for qid, answer in zip(qids, pred_answer):
             all_result[qid] = answer
 

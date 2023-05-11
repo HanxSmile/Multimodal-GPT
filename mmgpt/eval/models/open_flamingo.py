@@ -36,8 +36,6 @@ class EvalModel:
             tuning_config=tuning_config.tuning_config,
         )
         model.load_state_dict(state_dict, strict=False)
-        model.half()
-        model = model.to("cuda")
         model.eval()
         tokenizer.padding_side = "left"
         tokenizer.add_eos_token = False
@@ -56,12 +54,12 @@ class EvalModel:
             length_penalty
     ):
         self.model.eval()
-
+        device = self.model.module.device
         with torch.inference_mode():
             output_ids = self.model.module.generate(
-                vision_x=images.half().cuda(),
-                lang_x=input_ids.cuda(),
-                attention_mask=attention_mask.cuda(),
+                vision_x=images.to(device),
+                lang_x=input_ids.to(device),
+                attention_mask=attention_mask.to(device),
                 max_new_tokens=max_new_token,
                 num_beams=num_beams,
                 length_penalty=length_penalty
