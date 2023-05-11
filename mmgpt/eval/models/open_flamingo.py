@@ -33,7 +33,7 @@ class EvalModel:
             lang_encoder_path=llama_path,
             tokenizer_path=llama_path,
             pretrained_model_path=open_flamingo_path,
-            tuning_config=tuning_config,
+            tuning_config=tuning_config.tuning_config,
         )
         model.load_state_dict(state_dict, strict=False)
         model.half()
