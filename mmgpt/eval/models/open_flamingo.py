@@ -47,44 +47,25 @@ class EvalModel:
 
     def __call__(
             self,
-            prompt,
-            imgpaths,
+            input_ids,
+            images,
+            attention_mask,
             max_new_token,
             num_beams,
             length_penalty
     ):
-        if len(imgpaths) > 1:
-            raise RuntimeError(
-                "Current only support one image, please clear gallery and upload one image"
-            )
-        lang_x = self.tokenizer([prompt], return_tensors="pt")
-        if len(imgpaths) == 0 or imgpaths is None:
-            for layer in self.model.lang_encoder._get_decoder_layers():
-                layer.condition_only_lang_x(True)
-            output_ids = self.model.lang_encoder.generate(
-                input_ids=lang_x["input_ids"].cuda(),
-                attention_mask=lang_x["attention_mask"].cuda(),
-                max_new_tokens=max_new_token,
-                num_beams=num_beams,
-                length_penalty=length_penalty
-            )[0]
-            for layer in self.model.lang_encoder._get_decoder_layers():
-                layer.condition_only_lang_x(False)
-        else:
-            images = (Image.open(fp) for fp in imgpaths)
-            vision_x = [self.image_processor(im).unsqueeze(0) for im in images]
-            vision_x = torch.cat(vision_x, dim=0)
-            vision_x = vision_x.unsqueeze(1).unsqueeze(0).half()
+        self.model.eval()
 
+        with torch.inference_mode():
             output_ids = self.model.generate(
-                vision_x=vision_x.cuda(),
-                lang_x=lang_x["input_ids"].cuda(),
-                attention_mask=lang_x["attention_mask"].cuda(),
+                vision_x=images.half().cuda(),
+                lang_x=input_ids.half().cuda(),
+                attention_mask=attention_mask.half().cuda(),
                 max_new_tokens=max_new_token,
                 num_beams=num_beams,
                 length_penalty=length_penalty
-            )[0]
-        generated_text = self.tokenizer.decode(output_ids, skip_special_tokens=True)
-        # print(generated_text)
-        result = generated_text.split(self.RESPONSE_SPLIT)[-1].strip()
-        return result
+            )
+        output_ids = output_ids[:, len(input_ids):]
+        generated_text = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)
+
+        return generated_text
