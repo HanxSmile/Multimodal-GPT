@@ -8,5 +8,4 @@ nohup srun -p bigdata --gres=gpu:4 --quotatype=reserved torchrun --nproc_per_nod
   --batch_size 2 \
   --tuning_config configs/lora_config.py \
   --dataset_config configs/sqa_dataset_config.py \
-  --report_to_wandb \
   >> /mnt/lustre/hanxiao/input/log/flamingo_train_vl_data.log  2>&1 &
