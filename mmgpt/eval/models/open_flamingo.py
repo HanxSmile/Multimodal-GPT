@@ -66,9 +66,9 @@ class EvalModel:
                 num_beams=num_beams,
                 length_penalty=length_penalty
             )
-        output_ids = output_ids[:, len(input_ids):]
-        output_ids[output_ids < 0] = self.blank_token_id
-        output_ids[output_ids >= len(self.tokenizer)] = self.blank_token_id
+            output_ids = output_ids[:, len(input_ids):]
+            output_ids[output_ids < 0] = self.blank_token_id
+            output_ids[output_ids >= len(self.tokenizer)] = self.blank_token_id
         generated_text = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)
 
         return generated_text
