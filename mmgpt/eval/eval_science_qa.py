@@ -47,6 +47,7 @@ if __name__ == '__main__':
     )
 
     device_id = DistConfig.rank % torch.cuda.device_count()
+    eval_model.device = torch.device(f"cuda:{device_id}")
     flamingo_model = flamingo_model.to(device_id)
 
     ddp_model = DDP(flamingo_model, device_ids=[device_id], find_unused_parameters=True)

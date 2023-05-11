@@ -43,6 +43,7 @@ class EvalModel:
         self.image_processor = image_processor
         self.tokenizer = tokenizer
         self.blank_token_id = tokenizer.encode(" ")[-1]
+        self.device = torch.device("cpu")
 
     def __call__(
             self,
@@ -54,12 +55,12 @@ class EvalModel:
             length_penalty
     ):
         self.model.eval()
-        device = self.model.module.device
+
         with torch.inference_mode():
             output_ids = self.model.module.generate(
-                vision_x=images.to(device),
-                lang_x=input_ids.to(device),
-                attention_mask=attention_mask.to(device),
+                vision_x=images.to(self.device),
+                lang_x=input_ids.to(self.device),
+                attention_mask=attention_mask.to(self.device),
                 max_new_tokens=max_new_token,
                 num_beams=num_beams,
                 length_penalty=length_penalty
