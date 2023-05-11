@@ -44,6 +44,7 @@ class EvalModel:
         self.model = model
         self.image_processor = image_processor
         self.tokenizer = tokenizer
+        self.blank_token_id = tokenizer.encode(" ")[-1]
 
     def __call__(
             self,
@@ -66,6 +67,8 @@ class EvalModel:
                 length_penalty=length_penalty
             )
         output_ids = output_ids[:, len(input_ids):]
+        output_ids[output_ids < 0] = self.blank_token_id
+        output_ids[output_ids >= len(self.tokenizer)] = self.blank_token_id
         generated_text = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)
 
         return generated_text

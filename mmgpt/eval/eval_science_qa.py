@@ -15,7 +15,7 @@ class EvalConfig:
     flamingo_path = "checkpoints/OpenFlamingo-9B/checkpoint.pt"
     max_new_token = 512
     num_beams = 3
-    length_penalty = -2
+    length_penalty = 1
     batch_size = 4
     num_workers = 4
 

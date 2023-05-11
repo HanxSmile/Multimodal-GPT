@@ -59,7 +59,7 @@ class ScienceQAEvalDataset(VQADataset):
             padding="longest",
             truncation=True,
             return_tensors="pt",
-            max_length=2000,
+            max_length=512,
         )
         return encodings
 
