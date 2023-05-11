@@ -59,8 +59,8 @@ class EvalModel:
         with torch.inference_mode():
             output_ids = self.model.module.generate(
                 vision_x=images.half().cuda(),
-                lang_x=input_ids.half().cuda(),
-                attention_mask=attention_mask.half().cuda(),
+                lang_x=input_ids.cuda(),
+                attention_mask=attention_mask.cuda(),
                 max_new_tokens=max_new_token,
                 num_beams=num_beams,
                 length_penalty=length_penalty
