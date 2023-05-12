@@ -36,9 +36,9 @@ class ScienceQAPrompter:
     def __call__(self, question):
 
         if self.dataset_type == "visual":
-            template = TEMPLATE["visual_prompt"].format(image="<image>", question=question)
+            template = TEMPLATE["visual_prompt"].format(image="<image>", instruction=question)
         else:
-            template = TEMPLATE["language_prompt"].format(question=question)
+            template = TEMPLATE["language_prompt"].format(instruction=question)
 
         return template
 
