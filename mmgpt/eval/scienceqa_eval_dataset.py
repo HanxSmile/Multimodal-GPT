@@ -63,22 +63,11 @@ class ScienceQAEvalDataset(VQADataset):
         )
         return encodings
 
-    def process_text(self, problem_info):
-        qid, problem = problem_info
-        question = ParseProblem.get_question_text(problem)
-        context = ParseProblem.get_context_text(problem)
-        choice = ParseProblem.get_choice_text(problem)
-        answer = ParseProblem.get_answer(problem)
-        lecture = ParseProblem.get_lecture_text(problem)
-        solution = ParseProblem.get_solution_text(problem)
-
-        prompt_format = self.sqa_cfg.prompt_format
-        sample_type = self._sample_type(problem_info)
-
-        instruction, true_answer = self.prompter[sample_type](prompt_format, question, context, choice, answer, lecture,
-                                                              solution)
-
-        return dict(instruction=instruction, answer=true_answer)
+    def process_text(self, problem):
+        question, answer = ParseProblem.extract_qa(problem, self.sqa_cfg)
+        sample_type = self._sample_type(problem)
+        instruction = self.prompter[sample_type](question)
+        return dict(instruction=instruction, answer=answer)
 
     def __len__(self):
         return len(self.qids)
@@ -96,7 +85,7 @@ class ScienceQAEvalDataset(VQADataset):
         qid = self.qids[index]
         problem = self.all_problems[qid]
         image_tensors = self.process_image((qid, problem))
-        text = self.process_text((qid, problem))
+        text = self.process_text(problem)
         res.update(image=image_tensors, qid=qid)
         res.update(text)
         return res

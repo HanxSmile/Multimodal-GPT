@@ -44,14 +44,14 @@ class VQAPrompter:
 
 class VQADataset(Dataset):
     def __init__(
-        self,
-        tokenizer,
-        vis_processor=None,
-        vis_root=None,
-        ann_paths=[],
-        add_eos=True,
-        ignore_instruction=True,
-        sample_image=False,
+            self,
+            tokenizer,
+            vis_processor=None,
+            vis_root=None,
+            ann_paths=[],
+            add_eos=True,
+            ignore_instruction=True,
+            sample_image=False,
     ):
         """
         vis_root (string): Root directory of images (e.g. coco/images/)
@@ -144,7 +144,7 @@ class VQADataset(Dataset):
             instruction_token = self.tokenizer(
                 text["instruction"], return_tensors=None, padding="do_not_pad", truncation=True, max_length=512
             )
-            labels = [-100] * len(instruction_token["input_ids"]) + labels[len(instruction_token["input_ids"]) :]
+            labels = [-100] * len(instruction_token["input_ids"]) + labels[len(instruction_token["input_ids"]):]
 
         res.update(labels=labels)
         return res

@@ -13,7 +13,7 @@ class EvalConfig:
     finetune_path = "/mnt/lustre/hanxiao/work/Multimodal-GPT/train-my-gpt4/final_weights.pt"
     llama_path = "checkpoints/llama-7b-hf"
     flamingo_path = "checkpoints/OpenFlamingo-9B/checkpoint.pt"
-    max_new_token = 256
+    max_new_token = 16
     num_beams = 3
     length_penalty = 1
     batch_size = 2

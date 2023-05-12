@@ -12,32 +12,18 @@ from PIL import Image
 @dataclass
 class SqaConfig:
     split: str = "trainval"
-    prompt_format: str = "QCM-ALE"
+    prompt_format: str = "QCM-A"
     data_root: str = r"/mnt/lustre/hanxiao/input/scienceqa"
     problems_path: str = osp.join(data_root, "ScienceQA/data/scienceqa/problems.json")
     pid_split_path: str = osp.join(data_root, "ScienceQA/data/scienceqa/pid_splits.json")
     captions_path: str = osp.join(data_root, "ScienceQA/data/captions.json")
     images_dir: str = osp.join(data_root, "images")
-    output_dir: str = osp.join(data_root, "webdataset")
 
 
 TEMPLATE = {
     "description": "Template used by ScienceQA.",
-    "visual_question_prefix": "Below is a science question. Write an answer to completes the request.\n\n### Image:\n{image}",
-    "language_question_prefix": "Below is a science question. Write an answer to completes the request.",
-    'question_template': {
-        "C": "\n\n### Context:\n{}",
-        "Q": "\n\n### Question:\n{}",
-        "M": "\n\n### Options:\n{}",
-        "L": "\n\n### Lecture:\n{}",
-        "E": "\n\n### Explain:\n{}"
-    },
-    "response_prefix": "\n\n### Response:\n",
-    "answer_template": {
-        "A": "\n\n### Answer:\n{}",
-        "L": "\n\n### Lecture:\n{}",
-        "E": "\n\n### Explain:\n{}"
-    },
+    "visual_prompt": "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Image:\n{image}\n\n### Instruction:\n{question}\n\n### Response:\n",
+    "language_prompt": "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:\n",
     "response_split": "### Response:",
 }
 
@@ -47,37 +33,21 @@ class ScienceQAPrompter:
         assert dataset_type in ("visual", "language"), "dataset_type can only be 'visual' or 'language'."
         self.dataset_type = dataset_type
 
-    def __call__(self, format, question, context, choice, answer, lecture, solution):
-        all_info = {
-            "Q": question,
-            "C": context,
-            "M": choice,
-            "A": answer,
-            "L": lecture,
-            "E": solution
-        }
-        input_format, output_format = format.split("-")
-        if self.dataset_type == "visual":
-            input_str = TEMPLATE["visual_question_prefix"].format(image="<image>")
-        else:
-            input_str = TEMPLATE["language_question_prefix"]
-        for item in input_format:
-            input_str += TEMPLATE["question_template"][item].format(all_info[item])
-        response_prefix = TEMPLATE["response_prefix"]
-        response_str = ""
-        for item in output_format:
-            response_str += TEMPLATE["answer_template"][item].format(all_info[item])
+    def __call__(self, question):
 
-        instruction = input_str + response_prefix
-        answer = response_str
-        return instruction, answer
+        if self.dataset_type == "visual":
+            template = TEMPLATE["visual_prompt"].format(image="<image>", question=question)
+        else:
+            template = TEMPLATE["language_prompt"].format(question=question)
+
+        return template
 
     def get_response(self, output: str) -> str:
         return output.split(TEMPLATE["response_split"])[-1].strip()
 
 
 class ParseProblem:
-    USE_CAPTION = True
+    USE_CAPTION = False
     OPTIONS = ("A", "B", "C", "D", "E")
     PROMPT_TEMPLATE = [
         'CQM-A', 'CQM-LA', 'CQM-EA', 'CQM-LEA', 'CQM-ELA', 'CQM-AL', 'CQM-AE', 'CQM-ALE', 'QCM-A',
@@ -116,13 +86,15 @@ class ParseProblem:
     @staticmethod
     def get_lecture_text(problem):
         # \\n: GPT-3 can generate the lecture with more tokens.
-        lecture = problem['lecture'].replace("\n", "\\n")
+        # lecture = problem['lecture'].replace("\n", "\\n")
+        lecture = problem['lecture']
         return lecture
 
     @staticmethod
     def get_solution_text(problem):
         # \\n: GPT-3 can generate the solution with more tokens
-        solution = problem['solution'].replace("\n", "\\n")
+        # solution = problem['solution'].replace("\n", "\\n")
+        solution = problem['solution']
         return solution
 
     @staticmethod
@@ -174,14 +146,14 @@ class ParseProblem:
         elif output_format == 'ELA':
             output = f"Answer: {solution} {lecture} The answer is {answer}."
 
-        text = input + output
-        text = text.replace("  ", " ").strip()
-        if text.endswith("BECAUSE:"):
-            text = text.replace("BECAUSE:", "").strip()
-        return text
+        input = input.replace("  ", " ").strip()
+        output = output.replace("  ", " ").strip()
+        if output.endswith("BECAUSE:"):
+            output = output.replace("BECAUSE:", "").strip()
+        return input, output
 
     @classmethod
-    def build_prompt(cls, problem, args: Union[SqaConfig, str]):
+    def extract_qa(cls, problem, args: Union[SqaConfig, str]):
         if isinstance(args, str):
             prompt_format = args
         else:
@@ -194,7 +166,7 @@ class ParseProblem:
         lecture = cls.get_lecture_text(problem)
         solution = cls.get_solution_text(problem)
 
-        train_example = cls.create_one_example(prompt_format,
+        input, output = cls.create_one_example(prompt_format,
                                                question,
                                                context,
                                                choice,
@@ -203,7 +175,7 @@ class ParseProblem:
                                                solution,
                                                test_example=False)
 
-        return train_example
+        return input, output
 
 
 class ScienceQADataset(VQADataset):
@@ -267,17 +239,11 @@ class ScienceQADataset(VQADataset):
         return image
 
     def process_text(self, problem):
-        question = ParseProblem.get_question_text(problem)
-        context = ParseProblem.get_context_text(problem)
-        choice = ParseProblem.get_choice_text(problem)
-        answer = ParseProblem.get_answer(problem)
-        lecture = ParseProblem.get_lecture_text(problem)
-        solution = ParseProblem.get_solution_text(problem)
 
-        prompt_format = self.sqa_cfg.prompt_format
-        instruction, true_answer = self.prompter(prompt_format, question, context, choice, answer, lecture, solution)
+        question, answer = ParseProblem.extract_qa(problem, self.sqa_cfg)
+        instruction = self.prompter(question)
 
-        return dict(instruction=instruction, answer=true_answer)
+        return dict(instruction=instruction, answer=answer)
 
     def __len__(self):
         return len(self.qids)
