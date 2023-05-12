@@ -23,7 +23,7 @@ class SqaConfig:
 TEMPLATE = {
     "description": "Template used by ScienceQA.",
     "visual_prompt": "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Image:\n{image}\n\n### Instruction:\n{question}\n\n### Response:\n",
-    "language_prompt": "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:\n",
+    "language_prompt": "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{question}\n\n### Response:\n",
     "response_split": "### Response:",
 }
 
@@ -36,9 +36,9 @@ class ScienceQAPrompter:
     def __call__(self, question):
 
         if self.dataset_type == "visual":
-            template = TEMPLATE["visual_prompt"].format(image="<image>", instruction=question)
+            template = TEMPLATE["visual_prompt"].format(image="<image>", question=question)
         else:
-            template = TEMPLATE["language_prompt"].format(instruction=question)
+            template = TEMPLATE["language_prompt"].format(question=question)
 
         return template
 
